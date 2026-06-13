@@ -2,18 +2,18 @@
 
 // A class type that announces its construction and destruction
 class Tracer {
-  private:
-    inline static int nextId = 0;
-    int id_;
-
-  public:
+public:
     Tracer() : id_{nextId++} {
         std::cout << "  [TRACER " << id_ << "] CONSTRUCTED at " << this << '\n';
     }
     ~Tracer() {
         std::cout << "  [TRACER " << id_ << "] DESTROYED at " << this << '\n';
     }
-    int getId() { return this->id_; }
+    int getId() const { return this->id_; }
+
+private:
+    inline static int nextId = 0;
+    int id_;
 };
 
 void demonstrateStackLifetime() {
