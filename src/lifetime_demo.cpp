@@ -2,21 +2,21 @@
 
 // A class type that announces its construction and destruction
 class Tracer {
-public:
-    Tracer() : id_{nextId++} {
+  public:
+    Tracer() : id_{next_id_++} {
         std::cout << "  [TRACER " << id_ << "] CONSTRUCTED at " << this << '\n';
     }
     ~Tracer() {
         std::cout << "  [TRACER " << id_ << "] DESTROYED at " << this << '\n';
     }
-    int getId() const { return this->id_; }
+    int get_id() const { return id_; }
 
-private:
-    inline static int nextId = 0;
+  private:
+    inline static int next_id_ = 0;
     int id_;
 };
 
-void demonstrateStackLifetime() {
+void demonstrate_stack_lifetime() {
     std::cout << "\n=== STACK LIFETIME ===\n";
 
     // FUNCTION BLOCK ENTERED
@@ -80,7 +80,7 @@ void demonstrateStackLifetime() {
   // The storage previously associated with this invocation's automatic
   // objects is no longer reserved for them.
 
-void demonstrateHeapLifetime() {
+void demonstrate_heap_lifetime() {
     std::cout << "\n=== HEAP LIFETIME ===\n";
 
     // FUNCTION BLOCK ENTERED
@@ -140,7 +140,7 @@ void demonstrateHeapLifetime() {
   // Any storage associated with the invocation's automatic variables is no
   // longer reserved for them.
 
-void demonstrateDanglingPointer() {
+void demonstrate_dangling_pointer() {
     std::cout << "\n=== DANGLING POINTER ===\n";
 
     Tracer *a{new Tracer};
@@ -155,14 +155,14 @@ void demonstrateDanglingPointer() {
     // Dereferencing 'a' attempts to access an object that no longer exists,
     // which is undefined behaviour.
     //
-    // std::cout << "  " << a->getId();
+    // std::cout << "  " << a->get_id();
     //
     // If AddressSanitizer is enabled, executing the above line would typically
     // be reported as a heap-use-after-free error because it attempts to read
     // data from a heap object whose lifetime has already ended.
 }
 
-void demonstrateMemoryLeak() {
+void demonstrate_memory_leak() {
     std::cout << "\n=== MEMORY LEAK ===\n";
 
     Tracer *a{new Tracer};
@@ -181,7 +181,7 @@ void demonstrateMemoryLeak() {
     delete a;
 }
 
-void demonstrateDanglingStackPointer() {
+void demonstrate_dangling_stack_pointer() {
     std::cout << "\n=== DANGLING STACK POINTER ===\n";
 
     Tracer *ptr{nullptr};
@@ -201,7 +201,7 @@ void demonstrateDanglingStackPointer() {
     //
     // Dereferencing 'ptr' would therefore be undefined behaviour.
     //
-    // std::cout << ptr->getId();
+    // std::cout << ptr->get_id();
     //
     // If AddressSanitizer is enabled, executing the above line would be
     // reported as a stack-use-after-scope error because it attempts to
@@ -217,11 +217,11 @@ void demonstrateDanglingStackPointer() {
 int main() {
     std::cout << "=== STACK VS HEAP LIFETIME INTERACTIONS ===\n";
 
-    demonstrateStackLifetime();
-    demonstrateHeapLifetime();
-    demonstrateDanglingPointer();
-    demonstrateMemoryLeak();
-    demonstrateDanglingStackPointer();
+    demonstrate_stack_lifetime();
+    demonstrate_heap_lifetime();
+    demonstrate_dangling_pointer();
+    demonstrate_memory_leak();
+    demonstrate_dangling_stack_pointer();
 
     std::cout << "\n=== ALL DEMONSTRATIONS COMPLETE ===\n";
     std::cout << "If AddressSanitizer reports no leaks, all heap objects were "
