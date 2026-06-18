@@ -72,32 +72,47 @@ UniqueFd create_tcp_socket() {
 }
 
 int main() {
+    std::cout << "=== RAII Wrapper for file handle and socket fd ===\n";
+
     try {
-        std::cout << "=== RAII wrapper for a file handle and a socket fd ===\n";
+        std::cout << "[1] Acquire file resource\n";
 
         auto file{open_file("README.md")};
 
-        std::cout << "File fd: " << file.get() << '\n';
+        std::cout << "  Wrapper owns fd #" << file.get() << '\n';
 
-        auto raw_fd{file.release()};
+        std::cout << "[2] Release ownership from wrapper\n";
 
-        std::cout << "AFTER RELEASE\n";
-        std::cout << "  Raw fd: " << raw_fd << '\n';
-        std::cout << "  Wrapper fd: " << file.get() << '\n';
+        int raw_fd{file.release()};
+
+        std::cout << "  Raw fd received: " << raw_fd << '\n';
+        std::cout << "  Wrapper fd:      " << file.get() << "\n\n";
+
+        std::cout << "  Ownership now belongs to the caller.\n\n";
+
+        std::cout << "[3] Return ownership to wrapper\n";
 
         file.reset(raw_fd);
 
-        std::cout << "AFTER RESET\n";
-        std::cout << "   Wrapper fd: " << file.get() << "\n";
+        std::cout << "  Wrapper fd:    " << file.get() << "\n\n";
+
+        std::cout << "[4] Acquire socket resource\n";
 
         auto socket{create_tcp_socket()};
 
-        std::cout << "Socket fd: " << socket.get() << '\n';
+        std::cout << "  Wrapper owns socket fd #" << socket.get() << "\n\n";
+
+        std::cout << "[5] Explicitly release socket resource\n";
 
         socket.reset();
-        std::cout << "Socket closed via reset()\n";
+
+        std::cout << "  Socket resource closed.\n\n";
+
+        std::cout << "[6] Leaving scope\n";
+        std::cout << "  Remaining valid wrappers clean up automatically.\n";
     } catch (std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';
+        return 1;
     }
 
     return 0;
