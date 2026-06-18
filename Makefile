@@ -4,8 +4,8 @@ SANITIZERS := -fsanitize=address,undefined
 
 BIN_DIR := bin
 
-run: raii_wrapper
-	./$(BIN_DIR)/raii_wrapper
+run: move_only_type
+	./$(BIN_DIR)/move_only_type
 
 bin:
 	mkdir -p bin
@@ -19,6 +19,11 @@ raii_wrapper: bin
 	$(CXX) $(CXXFLAGS) $(SANITIZERS) \
         src/raii_wrapper.cpp \
         -o $(BIN_DIR)/raii_wrapper
+
+move_only_type: bin
+	$(CXX) $(CXXFLAGS) $(SANITIZERS) \
+        src/move_only_type.cpp \
+        -o $(BIN_DIR)/move_only_type
 
 clean:
 	rm -r $(BIN_DIR)/*
