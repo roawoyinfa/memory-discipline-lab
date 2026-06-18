@@ -70,17 +70,17 @@ own the transferred resource.
 ### Purpose
 
 A bump allocator (also called linear or arena allocator) is a simple memory 
-allocator that allocates memory by advancing a pointer through a preallocated
-memory block. A large memory block is reserved up front, and the allocator 
-maintains a pointer to the next available allocation location. Each allocation 
-returns the current pointer and advances it by the requested size. Individual 
-allocations are not freed. Instead, all memory is reclaimed at once when the
-allocator is reset or destroyed.
+allocator that allocates memory by advancing a pointer through a pre-allocated
+memory block. A large memory block (called the arena) is reserved up front, and 
+the allocator maintains a pointer to the next available allocation location in 
+the arena. Each allocation returns the current pointer and advances it by the 
+requested size. Individual allocations are not freed. Instead, all memory is 
+reclaimed at once when the allocator is reset or destroyed.
 
 Because allocation consists of only pointer arithmetic, bump allocators provide 
-extremely fast allocation with minimal overhead. They also exhibit good spatial 
-and temporal locality, reducing access latency since objects allocated near each
-other are likely to reside in the same cache line. 
+extremely fast allocation with minimal overhead. bump allocators also exhibit 
+good spatial and temporal locality, reducing access latency since objects 
+allocated near each other are likely to reside in the same cache line. 
 
 The major drawback is that individual allocations cannot be efficiently freed. 
 Memory can only be reclaimed in bulk. Consequently, bump allocators are most
@@ -92,8 +92,8 @@ short-lived  objects cannot be reclaimed independently of long-lived ones.
 
 #### B1. Arena bounds
 
-Every allocation returned by the allocator always lies within the arena's memory
-block.
+Every allocation returned by the allocator always resides within the bounds of
+the arena.
 
 #### B2. Monotonic allocations
 
