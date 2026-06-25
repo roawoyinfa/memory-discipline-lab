@@ -4,8 +4,8 @@ SANITIZERS := -fsanitize=address,undefined
 
 BIN_DIR := bin
 
-run: move_only_type
-	./$(BIN_DIR)/move_only_type
+run: bump_allocator
+	./$(BIN_DIR)/bump_allocator
 
 bin:
 	mkdir -p bin
@@ -24,6 +24,11 @@ move_only_type: bin
 	$(CXX) $(CXXFLAGS) $(SANITIZERS) \
         src/move_only_type.cpp \
         -o $(BIN_DIR)/move_only_type
+
+bump_allocator: bin
+	$(CXX) $(CXXFLAGS) $(SANITIZERS) \
+        src/bump_allocator.cpp \
+        -o $(BIN_DIR)/bump_allocator
 
 clean:
 	rm -r $(BIN_DIR)/*
