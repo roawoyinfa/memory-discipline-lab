@@ -2,21 +2,28 @@
 
 // A class type that announces its construction and destruction
 class Tracer {
-  public:
-    Tracer() : id_{next_id_++} {
+public:
+    Tracer()
+        : id_{next_id_++}
+    {
         std::cout << "  [TRACER " << id_ << "] CONSTRUCTED at " << this << '\n';
     }
-    ~Tracer() {
+    ~Tracer()
+    {
         std::cout << "  [TRACER " << id_ << "] DESTROYED at " << this << '\n';
     }
-    int get_id() const { return id_; }
+    int get_id() const
+    {
+        return id_;
+    }
 
-  private:
-    inline static int next_id_ = 0;
+private:
+    inline static int next_id_{0};
     int id_;
 };
 
-void demonstrate_stack_lifetime() {
+void demonstrate_stack_lifetime()
+{
     std::cout << "\n=== STACK LIFETIME ===\n";
 
     // FUNCTION BLOCK ENTERED
@@ -80,7 +87,8 @@ void demonstrate_stack_lifetime() {
   // The storage previously associated with this invocation's automatic
   // objects is no longer reserved for them.
 
-void demonstrate_heap_lifetime() {
+void demonstrate_heap_lifetime()
+{
     std::cout << "\n=== HEAP LIFETIME ===\n";
 
     // FUNCTION BLOCK ENTERED
@@ -92,7 +100,7 @@ void demonstrate_heap_lifetime() {
     // The pointer variable 'a' and the Tracer object it points to are distinct
     // objects with independent storage duration and lifetime.
 
-    Tracer *a{new Tracer};
+    Tracer* a{new Tracer};
     // STORAGE ACQUIRED (Tracer object):
     //
     // The new expression is executed. It requests storage for a Tracer object
@@ -140,10 +148,11 @@ void demonstrate_heap_lifetime() {
   // Any storage associated with the invocation's automatic variables is no
   // longer reserved for them.
 
-void demonstrate_dangling_pointer() {
+void demonstrate_dangling_pointer()
+{
     std::cout << "\n=== DANGLING POINTER ===\n";
 
-    Tracer *a{new Tracer};
+    Tracer* a{new Tracer};
 
     delete a;
 
@@ -162,10 +171,11 @@ void demonstrate_dangling_pointer() {
     // data from a heap object whose lifetime has already ended.
 }
 
-void demonstrate_memory_leak() {
+void demonstrate_memory_leak()
+{
     std::cout << "\n=== MEMORY LEAK ===\n";
 
-    Tracer *a{new Tracer};
+    Tracer* a{new Tracer};
 
     // a = new Tracer;
 
@@ -181,10 +191,11 @@ void demonstrate_memory_leak() {
     delete a;
 }
 
-void demonstrate_dangling_stack_pointer() {
+void demonstrate_dangling_stack_pointer()
+{
     std::cout << "\n=== DANGLING STACK POINTER ===\n";
 
-    Tracer *ptr{nullptr};
+    Tracer* ptr{nullptr};
 
     {
         Tracer a;
@@ -214,7 +225,8 @@ void demonstrate_dangling_stack_pointer() {
 // whereas heap objects (Tracer 2,3,4,5) have low virtual addresses. This
 // matches the typical virtual memory layout used by Linux x86-64 processes.
 
-int main() {
+int main()
+{
     std::cout << "=== STACK VS HEAP LIFETIME INTERACTIONS ===\n";
 
     demonstrate_stack_lifetime();
@@ -224,8 +236,9 @@ int main() {
     demonstrate_dangling_stack_pointer();
 
     std::cout << "\n=== ALL DEMONSTRATIONS COMPLETE ===\n";
-    std::cout << "If AddressSanitizer reports no leaks, all heap objects were "
-                 "properly freed.\n";
+    std::cout
+        << "If AddressSanitizer reports no leaks, all heap objects were "
+           "properly freed.\n";
 
     return 0;
 }
