@@ -302,19 +302,19 @@ Furthermore,
 Therefore, every valid requested alignment is a divisor of `max_alignment_`:
 
 $$
-\text{arena base address } \bmod \text{alignment} = 0
+\mathtt{arena\_base\_address} \bmod \mathtt{alignment} = 0
 $$
 
 An allocation is aligned when:
 
 $$
-(\text{arena base address } + \text{offset\_}) \bmod \text{alignment} = 0
+(\mathtt{arena\_base\_address} + \mathtt{offset\_}) \bmod \mathtt{alignment} = 0
 $$
 
 Consequently, aligning an allocation reduces to aligning the offset:
 
 $$
-\text{offset\_} \bmod \text{alignment} = 0
+\mathtt{offset\_} \bmod \mathtt{alignment} = 0
 $$
 
 #### Consequence
