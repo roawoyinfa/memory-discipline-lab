@@ -1,9 +1,10 @@
+#include <cassert>
 #include <fcntl.h>
 #include <iostream>
 #include <stdexcept>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <utility>
-#include <sys/socket.h>
 
 class UniqueFd {
 public:
@@ -103,160 +104,141 @@ int main()
     std::cout << "=== RAII Wrapper for file handle and socket fd ===\n";
 
     try {
-        std::cout << "[1] Acquire file resource\n";
+        // ---------------------------------------------------------
+        // Default construction
+        // ---------------------------------------------------------
+
+        UniqueFd empty;
+
+        assert(!empty);
+        assert(empty.get() == -1);
+
+        std::cout << "\nDefault construction:\n";
+        std::cout << "  fd = " << empty.get() << '\n';
+
+        // ---------------------------------------------------------
+        // Resource acquisition
+        // ---------------------------------------------------------
 
         auto file{open_file("README.md")};
 
+        assert(file);
+        assert(file.get() >= 0);
+
+        std::cout << "\nAfter acquiring a file:\n";
         std::cout << "  Wrapper owns fd #" << file.get() << '\n';
 
-        std::cout << "[2] Release ownership from wrapper\n";
+        // ---------------------------------------------------------
+        // Release ownership
+        // ---------------------------------------------------------
 
         int raw_fd{file.release()};
 
-        std::cout << "  Raw fd received: " << raw_fd << '\n';
-        std::cout << "  Wrapper fd:      " << file.get() << "\n\n";
+        assert(raw_fd >= 0);
+        assert(!file);
+        assert(file.get() == -1);
 
-        std::cout << "  Ownership now belongs to the caller.\n\n";
+        std::cout << "\nAfter release():\n";
+        std::cout << "  Raw fd:     " << raw_fd << '\n';
+        std::cout << "  Wrapper fd: " << file.get() << '\n';
 
-        std::cout << "[3] Return ownership to wrapper\n";
+        // ---------------------------------------------------------
+        // Reattach ownership
+        // ---------------------------------------------------------
 
         file.reset(raw_fd);
 
-        std::cout << "  Wrapper fd:    " << file.get() << "\n\n";
+        assert(file);
+        assert(file.get() == raw_fd);
 
-        std::cout << "[4] Acquire socket resource\n";
+        std::cout << "\nAfter reset(fd):\n";
+        std::cout << "  Wrapper owns fd #" << file.get() << '\n';
+
+        // ---------------------------------------------------------
+        // Move construction
+        // ---------------------------------------------------------
+
+        UniqueFd moved{std::move(file)};
+
+        assert(!file);
+        assert(file.get() == -1);
+
+        assert(moved);
+        assert(moved.get() == raw_fd);
+
+        std::cout << "\nAfter move construction:\n";
+        std::cout << "  Source fd:      " << file.get() << '\n';
+        std::cout << "  Destination fd: " << moved.get() << '\n';
+
+        // ---------------------------------------------------------
+        // Move assignment
+        // ---------------------------------------------------------
+
+        UniqueFd assigned;
+
+        assigned = std::move(moved);
+
+        assert(!moved);
+        assert(moved.get() == -1);
+
+        assert(assigned);
+        assert(assigned.get() == raw_fd);
+
+        std::cout << "\nAfter move assignment:\n";
+        std::cout << "  Source fd:      " << moved.get() << '\n';
+        std::cout << "  Destination fd: " << assigned.get() << '\n';
+
+        // ---------------------------------------------------------
+        // Explicit resource release
+        // ---------------------------------------------------------
+
+        assigned.reset();
+
+        assert(!assigned);
+        assert(assigned.get() == -1);
+
+        std::cout << "\nAfter reset():\n";
+        std::cout << "  Resource explicitly released.\n";
+
+        // ---------------------------------------------------------
+        // Socket resource
+        // ---------------------------------------------------------
 
         auto socket{create_tcp_socket()};
 
-        std::cout << "  Wrapper owns socket fd #"
-                  << socket.get() << "\n\n";
+        assert(socket);
+        assert(socket.get() >= 0);
 
-        std::cout << "[5] Explicitly release socket resource\n";
+        std::cout << "\nSocket acquired:\n";
+        std::cout << "  Socket fd #" << socket.get() << '\n';
 
         socket.reset();
 
-        std::cout << "  Socket resource closed.\n\n";
+        assert(!socket);
+        assert(socket.get() == -1);
 
-        std::cout << "[6] Leaving scope\n";
-        std::cout
-            << "  Remaining valid wrappers clean up automatically.\n";
-    } catch (std::exception& ex) {
+        std::cout << "  Socket released.\n";
+
+        // ---------------------------------------------------------
+        // Automatic cleanup
+        // ---------------------------------------------------------
+
+        {
+            auto scoped_file{open_file("README.md")};
+
+            assert(scoped_file);
+
+            std::cout << "\nAutomatic cleanup:\n";
+            std::cout << "  File fd #" << scoped_file.get()
+                      << " will be closed automatically at scope exit.\n";
+        }
+
+        std::cout << "  Scope exited successfully.\n";
+
+        std::cout << "\nAll tests passed.\n";
+    }
+    catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';
         return 1;
     }
-
-    return 0;
 }
-
-// int main()
-// {
-//     std::cout << "=== UniqueFd Tests ===\n";
-
-//     try {
-//         // ---------------------------------------------------------
-//         // File acquisition
-//         // ---------------------------------------------------------
-
-//         auto file{open_file("README.md")};
-
-//         assert(file);
-//         assert(file.get() >= 0);
-
-//         std::cout << "✓ File acquired\n";
-
-//         // ---------------------------------------------------------
-//         // release()
-//         // ---------------------------------------------------------
-
-//         int raw_fd{file.release()};
-
-//         assert(raw_fd >= 0);
-//         assert(!file);
-//         assert(file.get() == -1);
-
-//         std::cout << "✓ release() transfers ownership\n";
-
-//         // ---------------------------------------------------------
-//         // reset()
-//         // ---------------------------------------------------------
-
-//         file.reset(raw_fd);
-
-//         assert(file);
-//         assert(file.get() == raw_fd);
-
-//         std::cout << "✓ reset() reacquires ownership\n";
-
-//         // ---------------------------------------------------------
-//         // Move construction
-//         // ---------------------------------------------------------
-
-//         const int original_fd{file.get()};
-
-//         auto moved_to{std::move(file)};
-
-//         assert(!file);
-//         assert(file.get() == -1);
-
-//         assert(moved_to);
-//         assert(moved_to.get() == original_fd);
-
-//         std::cout << "✓ Move construction transfers ownership\n";
-
-//         // ---------------------------------------------------------
-//         // Move assignment
-//         // ---------------------------------------------------------
-
-//         auto socket{create_tcp_socket()};
-
-//         assert(socket);
-
-//         const int socket_fd{socket.get()};
-
-//         moved_to = std::move(socket);
-
-//         assert(!socket);
-//         assert(socket.get() == -1);
-
-//         assert(moved_to);
-//         assert(moved_to.get() == socket_fd);
-
-//         std::cout << "✓ Move assignment transfers ownership\n";
-
-//         // ---------------------------------------------------------
-//         // Explicit reset()
-//         // ---------------------------------------------------------
-
-//         moved_to.reset();
-
-//         assert(!moved_to);
-//         assert(moved_to.get() == -1);
-
-//         std::cout << "✓ reset() releases resource\n";
-
-//         // ---------------------------------------------------------
-//         // Self-move assignment
-//         // ---------------------------------------------------------
-
-//         auto another_file{open_file("README.md")};
-
-//         const int fd_before{another_file.get()};
-
-//         another_file = std::move(another_file);
-
-//         assert(another_file);
-//         assert(another_file.get() == fd_before);
-
-//         std::cout << "✓ Self-move assignment handled correctly\n";
-
-//         std::cout << "\nAll tests passed.\n";
-//     } catch (const std::exception& ex) {
-//         std::cerr << "Test failed with exception: "
-//                   << ex.what()
-//                   << '\n';
-
-//         return 1;
-//     }
-
-//     return 0;
-// }
