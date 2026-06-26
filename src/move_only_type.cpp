@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <unordered_set>
 
@@ -78,29 +79,54 @@ private:
 
 int main()
 {
-    std::cout << "=== Move-only type demonstrating stolen-from state ===\n";
+    std::cout << "=== Move-only Type Demonstrating Stolen-from State ===\n";
+
+    // ---------------------------------------------------------
+    // Initial state
+    // ---------------------------------------------------------
+
+    assert(Reservation::active_count() == 0);
+
+    std::cout << "Active reservations: "
+              << Reservation::active_count() << '\n';
+
+    // ---------------------------------------------------------
+    // Resource acquisition
+    // ---------------------------------------------------------
+
+    auto alice{Reservation::acquire()};
+
+    assert(alice.valid());
+    assert(alice.id() >= 0);
+    assert(Reservation::active_count() == 1);
+
+    std::cout << "\nAlice acquires reservation #" << alice.id() << '\n';
+    std::cout << "Active reservations: "
+              << Reservation::active_count() << '\n';
 
     // ---------------------------------------------------------
     // Move construction
     // ---------------------------------------------------------
 
-    auto alice{Reservation::acquire()};
-
-    std::cout << "Alice acquires reservation #"
-              << alice.id() << '\n';
+    const int reservation_id{alice.id()};
 
     auto bob{std::move(alice)};
 
+    assert(!alice.valid());
+    assert(alice.id() == -1);
+
+    assert(bob.valid());
+    assert(bob.id() == reservation_id);
+
+    assert(Reservation::active_count() == 1);
+
     std::cout << "\nAfter move construction:\n";
-
-    std::cout << "  Alice valid: "
-              << std::boolalpha
-              << alice.valid()
+    std::cout << "  Alice valid: " << std::boolalpha << alice.valid()
               << ", id = " << alice.id() << '\n';
-
-    std::cout << "  Bob valid: "
-              << bob.valid()
-              << ", id = " << bob.id() << "\n\n";
+    std::cout << "  Bob valid:   " << bob.valid()
+              << ", id = " << bob.id() << '\n';
+    std::cout << "  Active reservations: "
+              << Reservation::active_count() << '\n';
 
     // ---------------------------------------------------------
     // Move assignment
@@ -108,55 +134,62 @@ int main()
 
     auto charlie{Reservation::acquire()};
 
-    std::cout << "Charlie acquires reservation #"
-              << charlie.id() << '\n';
-
     const int charlie_original_id{charlie.id()};
 
-    std::cout << "Active reservations before assignment: "
-              << Reservation::active_count() << '\n';
+    assert(Reservation::active_count() == 2);
+
+    std::cout << "\nCharlie acquires reservation #"
+              << charlie_original_id << '\n';
 
     charlie = std::move(bob);
 
+    assert(!bob.valid());
+    assert(bob.id() == -1);
+
+    assert(charlie.valid());
+    assert(charlie.id() == reservation_id);
+
+    assert(Reservation::active_count() == 1);
+
     std::cout << "\nAfter move assignment:\n";
-
-    std::cout << "  Bob valid: "
-              << bob.valid()
+    std::cout << "  Bob valid:      " << bob.valid()
               << ", id = " << bob.id() << '\n';
-
-    std::cout << "  Charlie valid: "
-              << charlie.valid()
+    std::cout << "  Charlie valid:  " << charlie.valid()
               << ", id = " << charlie.id() << '\n';
-
-    std::cout << "\nCharlie's previous reservation (#"
+    std::cout << "  Charlie's previous reservation (#"
               << charlie_original_id
-              << ") was released before ownership transfer.\n";
-
-    std::cout << "Active reservations after assignment: "
-              << Reservation::active_count() << "\n\n";
+              << ") was released.\n";
+    std::cout << "  Active reservations: "
+              << Reservation::active_count() << '\n';
 
     // ---------------------------------------------------------
-    // Destructor cleanup
+    // Automatic cleanup
     // ---------------------------------------------------------
 
-    std::cout << "Demonstrating automatic release on destruction\n";
-
-    std::cout << "Active reservations before scope: "
+    std::cout << "\nAutomatic cleanup:\n";
+    std::cout << "  Active reservations before scope: "
               << Reservation::active_count() << '\n';
 
     {
         auto temporary{Reservation::acquire()};
 
-        std::cout << "  Acquired temporary reservation #"
-                  << temporary.id() << '\n';
+        assert(temporary.valid());
+        assert(Reservation::active_count() == 2);
 
+        std::cout << "  Temporary reservation #"
+                  << temporary.id() << '\n';
         std::cout << "  Active reservations inside scope: "
                   << Reservation::active_count() << '\n';
     }
 
-    std::cout << "Active reservations after scope: "
+    assert(Reservation::active_count() == 1);
+
+    std::cout << "  Active reservations after scope: "
               << Reservation::active_count() << '\n';
 
-    std::cout << "\nThe temporary reservation was automatically "
-                 "released when its destructor ran.\n";
+    // ---------------------------------------------------------
+    // Final cleanup
+    // ---------------------------------------------------------
+
+    std::cout << "\nAll tests passed.\n";
 }
