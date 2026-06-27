@@ -4,7 +4,7 @@ SANITIZERS := -fsanitize=address,undefined
 
 BIN_DIR := bin
 
-run: struct_analysis_tool
+run: lifetime_demo raii_wrapper move_only_type bump_allocator struct_analysis_tool
 	./$(BIN_DIR)/struct_analysis_tool
 
 bin:
