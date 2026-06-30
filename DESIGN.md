@@ -291,7 +291,7 @@ requested alignment.
 
 #### Rationale
 
-The arena is allocation is aligned to `max_alignment_`.
+The arena is aligned to `max_alignment_`.
 
 Furthermore,
 
