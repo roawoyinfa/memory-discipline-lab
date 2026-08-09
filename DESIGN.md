@@ -1,5 +1,20 @@
 # DESIGN
 
+## Table of Contents
+
+- [Purpose](#purpose)
+- [RAII Wrapper for a File Handle and Socket fd](#raii-wrapper-for-a-file-handle-and-socket-fd)
+  - [Sentinel Value for Invalid File Descriptors](#sentinel-value-for-invalid-file-descriptors)
+  - [Ownership Release via `std::exchange`](#ownership-release-via-stdexchange)
+  - [Self-Reset Protection](#self-reset-protection)
+- [Bump Allocator](#bump-allocator)
+  - [Arena Storage Ownership](#arena-storage-ownership)
+  - [Allocator-Owned Arena Storage](#allocator-owned-arena-storage)
+  - [Allocation Interface Return Type](#allocation-interface-return-type)
+  - [Exhaustion Policy](#exhaustion-policy)
+  - [Alignment Verification Using Offset](#alignment-verification-using-offset)
+  - [Two-Stage Capacity Validation to Prevent Integer Overflow](#two-stage-capacity-validation-to-prevent-integer-overflow)
+
 ## Purpose
 
 This document explains non-obvious design decisions made throughout the project.
@@ -7,9 +22,9 @@ It focuses on decisions that are not immediately apparent from the source code,
 including implementation tradeoffs, resource-management strategies, ownership models,
 and allocator behavior.
 
-## Deliverable: RAII Wrapper for a file handle and socket fd
+## RAII Wrapper for a file handle and socket fd
 
-### D1. Sentinel value for invalid file descriptors
+### Sentinel value for invalid file descriptors
 
 #### context
 
@@ -36,7 +51,7 @@ engaged-state checks when accessing `fd_`.
 The implementation must ensure that moved-from and objects that have released
 ownership set `fd_` to `-1`.
 
-### D2. Ownership Release via std::exchange
+### Ownership Release via std::exchange
 
 #### Context
 
@@ -62,17 +77,15 @@ an temporary variable.
 
 #### Rationale
 
-`std::exchange()` explicitly communicates intent in a single operation, improving
-readability. It makes the operation atomic in the sense that there's no
-intermediate state where `fd_` has been reset to `-1` but the original value has
-not yet been captured.
+`std::exchange()` expresses the operation as a single clear state transition,
+improving readability and avoiding the need for a temporary variable.
 
 #### Consequence
 
 The implementation depends on `<utility>` and assumes `-1` remains the sentinel
 value for representing non-owning state.
 
-### D3. Self-reset protection
+### Self-reset protection
 
 #### Context
 
@@ -100,9 +113,9 @@ descriptor.
 Callers may safely pass the currently owned file descriptor to `reset()` without
 risking accidental resource invalidation.
 
-## Deliverable: Bump allocator
+## Bump allocator
 
-### B1. Arena storage ownership
+### Arena storage ownership
 
 #### Context
 
@@ -166,7 +179,7 @@ alignment requirements of the allocated type, which for `std::byte` is typically
 The aligned allocation must be paired with a corresponding aligned deallocation
 that calls `::operator delete` with the matching alignment.
 
-### B2. Allocator-owned arena storage
+### Allocator-owned arena storage
 
 #### Context
 
@@ -203,7 +216,7 @@ allocation, simplicity and correctness are prioritized over configurability.
 The allocator owns and manages its arena storage and cannot operate directly on
 caller-provided memory without changes to the interface.
 
-### B3. Allocation interface return-type
+### Allocation interface return-type
 
 #### Context
 
@@ -235,7 +248,7 @@ allocated storage.
 Internally, the allocator performs pointer arithmetic using `std::byte*`
 because arithmetic on `void*` is not supported.
 
-### B4. Exhaustion policy
+### Exhaustion policy
 
 #### Context
 
@@ -277,7 +290,7 @@ Callers must treat `nullptr` return value as an allocation failure and check the
 return value before accessing the allocated memory. Failure to do so results in
 undefined behavior.
 
-### B5. Alignment verification using offset
+### Alignment verification using offset
 
 #### Context
 
@@ -323,7 +336,7 @@ If a larger alignment than `max_alignment_` were permitted, this invariant
 would no longer hold because the arena base itself might not satisfy the
 requested alignment.
 
-### B6. Two-stage capacity validation to prevent integer overflow
+### Two-stage capacity validation to prevent integer overflow
 
 #### Context
 
